@@ -7,7 +7,7 @@ const ExtractPlugin = require('extract-text-webpack-plugin');
 const isDev = process.env.NODE_ENV === 'development';
 
 const config = {
-    target:'web',
+    target: 'web',
     entry: path.join(__dirname, 'src/index.js'),
     output: {
         path: path.resolve(__dirname, 'dist'),
@@ -18,15 +18,15 @@ const config = {
             test: /\.css$/,
             loader: 'style-loader',
             loader: 'css-loader'
-        }, 
+        },
         {
             test: /\.vue$/,
             loader: 'vue-loader'
-        }, 
+        },
         {
             test: /\.jsx$/,
             loader: 'babel-loader'
-        },{
+        }, {
             test: /\.(png|jpe?g|gif|svg)$/i,
             use: [
                 {
@@ -82,6 +82,40 @@ if (isDev) {
     config.plugins.push(
         new webpack.HotModuleReplacementPlugin(),
         new webpack.NoEmitOnErrorsPlugin()
+    )
+} else {
+    config.entry = {
+        app: path.join(__dirname, 'src/index.js'),
+        vendor: ['vue']
+    }
+    config.devtool = 'null';//注意，这能大大压缩我们的打包代码
+    config.output.filename = '[name]-[chunkhash:8].js';
+    config.module.rules.push({
+        test: /\.scss/,
+        use: ExtractPlugin.extract({
+            fallback: 'style-loader',
+            use: [
+                'css-loader',
+                {
+                    loader: 'postcss-loader',
+                    options: {
+                        sourceMap: true
+                    }
+                },
+                'sass-loader'
+            ]
+        })
+    });
+    config.plugins.push(
+        new ExtractPlugin('scss-[hash:8].css'),
+        // 将类库文件单独打包出来
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'vendor'
+        }),
+        // webpack相关的代码单独打包
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'runtime'
+        })
     )
 }
 
